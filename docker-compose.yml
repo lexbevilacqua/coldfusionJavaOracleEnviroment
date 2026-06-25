@@ -1,0 +1,59 @@
+version: '1.0'
+
+services:
+  oraclexe:
+    image: gvenzl/oracle-xe:18.4.0
+    container_name: oraclexe
+    environment:
+      - ORACLE_PASSWORD=Oracle18
+      - ORACLE_CHARACTERSET=AL32UTF8
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    volumes:
+      - oradata:/opt/oracle/oradata
+    networks:
+      - cfnet
+
+  coldfusion:
+    image: adobecoldfusion/coldfusion:2021
+    container_name: coldfusion
+    depends_on:
+      - oraclexe
+    environment:
+      - CF_ADMIN_PASSWORD=admin
+      - DB_HOST=oraclexe
+      - DB_PORT=1521
+      - DB_SERVICE=XE
+      - DB_USER=CFUSER
+      - DB_PASSWORD=cfpass
+    ports:
+      - "8500:8500"
+    volumes:
+      - ./coldfusion/wwwroot:/opt/coldfusion/wwwroot
+      - ./coldfusion/jdbc:/opt/coldfusion/jdbc
+    networks:
+      - cfnet
+
+  weblogic:
+    image: store/oracle/weblogic:12.2.1.4
+    container_name: weblogic
+    depends_on:
+      - oraclexe
+    environment:
+      - ADMIN_USER=weblogic
+      - ADMIN_PASSWORD=welcome1
+    ports:
+      - "7001:7001"
+    volumes:
+      - weblogic_data:/u01/oracle
+    networks:
+      - cfnet
+
+volumes:
+  oradata:
+  weblogic_data:
+
+networks:
+  cfnet:
+    driver: bridge
